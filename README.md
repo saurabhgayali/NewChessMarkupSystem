@@ -176,6 +176,59 @@ FORT 1 4
 
 ---
 
+## Illegal Move Notation
+
+An illegal move is recorded with a `?` prefix before the move token. Illegal moves are **universal** — they apply regardless of the game variant and describe moves that violate the fundamental movement rules of a piece type.
+
+### Syntax
+
+```
+?<piece><from> <piece><to>
+```
+
+The `?` marks the attempted move as illegal. Only the first token (the from-position) carries the `?`; the second token is the intended destination.
+
+### Universal Illegal Move Rules
+
+| Piece Type | Illegal if…                                                         |
+|------------|---------------------------------------------------------------------|
+| Pawn       | Moves more than 2 steps forward, moves backward, or moves sideways without capturing |
+| Rook       | Moves diagonally                                                    |
+| Bishop     | Moves in a straight line (horizontal or vertical)                   |
+| Knight     | Moves in any pattern other than an L-shape (2+1 squares)            |
+| Queen      | Moves in any direction other than straight or diagonal lines        |
+| King       | Moves more than 1 square (outside of castling)                      |
+| Camel      | Moves in a straight or diagonal line (must move in a 3+1 L-shape)  |
+
+> Any piece type beyond the standard six can have its illegal patterns described the same way.
+
+### Examples
+
+```
+# Pawn 9 tries to move 3 steps forward — illegal
+?9AI 9DI
+
+# Camel moves in a straight line — illegal
+?7KA 7KD
+
+# Bishop tries to move straight — illegal
+?5JA 5JD
+
+# King tries to move 3 squares — illegal
+?1MA 1MD
+```
+
+### Combining with Other Notations
+
+An illegal move can also be combined with a special event if the illegality is detected during a special action:
+
+```
+# Illegal castling attempt
+?FORT 1 4
+```
+
+---
+
 ## File Extension
 
 Save game files with the `.ncms` extension.
@@ -188,3 +241,4 @@ Save game files with the `.ncms` extension.
 - Pieces: **numbers 1–32 only** (no letter prefix)
 - Moves: **`<piece><from> <piece><to>`** → e.g. `9BI 9BJ`
 - Special events: `x` (death), `FORT` (castling), `+` (resurrection), `^` (promotion), `!` (check), `#` (checkmate), `=` (draw)
+- Illegal moves: `?<piece><from> <piece><to>` — universal, piece-type-based movement violations
