@@ -6,53 +6,49 @@ A move-oriented chess markup language that records a game as a sequence of piece
 
 ## Board Coordinate System
 
-The board uses a **column-row** coordinate format.
+A position is written as **row then column**.
 
-| Axis    | Range | Labels              |
-|---------|-------|---------------------|
-| Columns | 8     | I, J, K, L, M, N, O, P |
-| Rows    | 7     | A, B, C, D, E, F, G    |
+| Axis    | Range | Labels                  |
+|---------|-------|-------------------------|
+| Rows    | 7     | A, B, C, D, E, F, G     |
+| Columns | 8     | I, J, K, L, M, N, O, P  |
 
-A position is written as **column then row**: `IA`, `PG`, `LF`, etc.
+Examples: `AI` = row A column I, `BJ` = row B column J, `GP` = row G column P.
 
 ---
 
-## Piece Numbering
+## Pieces
 
-All 32 pieces are numbered **1–32**. Each piece has a type prefix and a unique number.
+All 32 pieces are identified by **numbers only: 1–32**. No letter prefix.
 
-| Type   | Prefix | Numbers      |
-|--------|--------|--------------|
-| King   | K      | 1, 17        |
-| Queen  | Q      | 2, 18        |
-| Rook   | R      | 3, 4, 19, 20 |
-| Bishop | B      | 5, 6, 21, 22 |
-| Knight | N      | 7, 8, 23, 24 |
-| Pawn   | P      | 9–16, 25–32  |
+| Side  | Pieces  |
+|-------|---------|
+| White | 1–16    |
+| Black | 17–32   |
 
-Example piece identifiers: `K1`, `Q2`, `R3`, `R4`, `B5`, `B6`, `N7`, `N8`, `P9`–`P16` (White); `K17`, `Q18`, `R19`, `R20`, `B21`, `B22`, `N23`, `N24`, `P25`–`P32` (Black).
+The initial assignment of numbers to piece types is declared in the SETUP block.
 
 ---
 
 ## Standard Move Format
 
-A move is written as:
+A single move is two tokens on one line:
 
 ```
-PIECE-FROM PIECE-TO
+<piece><from> <piece><to>
 ```
 
-- `PIECE` — piece identifier (e.g. `P9`)
-- `FROM` — current board position (column + row, e.g. `IA`)
-- `TO` — destination board position
+- `<piece>` — piece number (1–32)
+- `<from>` — current position (row + column)
+- `<to>` — destination position (row + column)
 
 **Example:**
 
 ```
-P9-IA P9-IB
+9BI 9BJ
 ```
 
-Pawn 9 moves from column I, row A to column I, row B.
+Piece 9 moves from row B column I to row B column J.
 
 ---
 
@@ -63,7 +59,7 @@ GAME: <white player> vs <black player>
 DATE: YYYY-MM-DD
 
 SETUP:
-<piece>-<position> ...
+<number> <type> <position> ...
 
 MOVES:
 <move>
@@ -73,61 +69,73 @@ MOVES:
 
 ### SETUP Block
 
-Lists every piece and its starting position. One line is fine; split across lines for readability.
+Declares the type and starting position of every piece. `<type>` is informational (King, Queen, Rook, Bishop, Knight, Pawn).
 
 ```
 SETUP:
-K1-MA  Q2-LA  R3-IA  R4-PA  B5-JA  B6-OA  N7-KA  N8-NA
-P9-IA2 P10-JA ...
+1 King   MA   17 King   MG
+2 Queen  LA   18 Queen  LG
+3 Rook   IA   19 Rook   IG
+4 Rook   PA   20 Rook   PG
+5 Bishop JA   21 Bishop JG
+6 Bishop OA   22 Bishop OG
+7 Knight KA   23 Knight KG
+8 Knight NA   24 Knight NG
+9 Pawn   IA   25 Pawn   IG
+10 Pawn  JA   26 Pawn   JG
+11 Pawn  KA   27 Pawn   KG
+12 Pawn  LA   28 Pawn   LG
+13 Pawn  MA   29 Pawn   MG
+14 Pawn  NA   30 Pawn   NG
+15 Pawn  OA   31 Pawn   OG
+16 Pawn  PA   32 Pawn   PG
 ```
-
-> Note: If your variant uses a different starting layout, just list the actual positions here.
 
 ### MOVES Block
 
-Each line is one move in `PIECE-FROM PIECE-TO` format.
+Each line is one move.
 
 ```
 MOVES:
-P9-IB P9-IC
-N7-KA N7-LB
-P10-JB P10-JC
+9BI 9BJ
+23KG 23LF
+10JA 10JC
 ```
 
 ---
 
 ## Special Move Notations
 
-| Event        | Syntax                    | Meaning                                      |
-|--------------|---------------------------|----------------------------------------------|
-| Capture/Death | `xPIECE`                 | Piece is removed from the board              |
-| Fort (Castle) | `FORT K1 R3`             | Castling between king and the named rook     |
-| Resurrection  | `+PIECE-POSITION`        | Piece returns to the board at position       |
-| Promotion     | `^PIECE-POSITION=NEWTYPE` | Pawn promotes; new type takes over the number |
-| Check         | `!KPIECE-POSITION`       | King is in check at position                 |
-| Checkmate     | `#KPIECE-POSITION`       | Checkmate; game ends                         |
-| Draw          | `=`                       | Game ends in a draw                          |
+| Event       | Syntax              | Meaning                                         |
+|-------------|---------------------|-------------------------------------------------|
+| Death       | `x<piece>`          | Piece is removed from the board (captured)      |
+| Fort        | `FORT <piece> <piece>` | Castling between king and rook               |
+| Resurrection | `+<piece><position>` | Piece returns to the board at position        |
+| Promotion   | `^<piece><position>` | Pawn reaches the last row and is promoted      |
+| Check       | `!<piece><position>` | King is in check at position                  |
+| Checkmate   | `#<piece><position>` | Checkmate; game ends                          |
+| Draw        | `=`                 | Game ends in a draw                             |
 
 ### Examples
 
 ```
-# Capture: Black captures White pawn 9
-xP9
+# Piece 9 is captured
+x9
 
-# Castling: White king-side
-FORT K1 R4
+# Castling: piece 1 (king) and piece 4 (rook)
+FORT 1 4
 
-# Resurrection of piece 9 at column I row A
-+P9-IA
+# Piece 9 resurrected at row A column I
++9AI
 
-# Pawn P9 promotes at IG to a Queen (takes over as a new Queen)
-^P9-IG=Q
+# Piece 9 promotes at row G column I
+^9GI
 
-# Check on black king
-!K17-MF
+# Piece 1 (king) is in check at row B column N
+!1BN
 
-# Checkmate
-#K17-MF
+# Checkmate — piece 1 at row B column N
+#1BN
 ```
 
 ---
@@ -139,19 +147,31 @@ GAME: Alice vs Bob
 DATE: 2026-09-05
 
 SETUP:
-K1-MA  Q2-LA  R3-IA  R4-PA  B5-JA  B6-OA  N7-KA  N8-NA
-P9-IA  P10-JA P11-KA P12-LA P13-MA P14-NA P15-OA P16-PA
-K17-MG Q18-LG R19-IG R20-PG B21-JG B22-OG N23-KG N24-NG
-P25-IG P26-JG P27-KG P28-LG P29-MG P30-NG P31-OG P32-PG
+1 King   MA   17 King   MG
+2 Queen  LA   18 Queen  LG
+3 Rook   IA   19 Rook   IG
+4 Rook   PA   20 Rook   PG
+5 Bishop JA   21 Bishop JG
+6 Bishop OA   22 Bishop OG
+7 Knight KA   23 Knight KG
+8 Knight NA   24 Knight NG
+9 Pawn   IA   25 Pawn   IG
+10 Pawn  JA   26 Pawn   JG
+11 Pawn  KA   27 Pawn   KG
+12 Pawn  LA   28 Pawn   LG
+13 Pawn  MA   29 Pawn   MG
+14 Pawn  NA   30 Pawn   NG
+15 Pawn  OA   31 Pawn   OG
+16 Pawn  PA   32 Pawn   PG
 
 MOVES:
-P9-IA  P9-IB
-N23-KG N23-LF
-P10-JA P10-JC
-xP9
-FORT K1 R4
-!K1-NB
-#K1-NB
+9AI 9BI
+23KG 23LF
+10JA 10JC
+x9
+FORT 1 4
+!1NB
+#1NB
 ```
 
 ---
@@ -164,7 +184,7 @@ Save game files with the `.ncms` extension.
 
 ## Summary
 
-- Positions: **column (I–P) + row (A–G)** → e.g. `IA`, `PG`
-- Pieces: **type prefix + number 1–32** → e.g. `K1`, `P25`
-- Moves: **`PIECE-FROM PIECE-TO`** on each line
-- Special events (capture, fort, resurrection, promotion, check, checkmate) use dedicated keywords
+- Positions: **row (A–G) + column (I–P)** → e.g. `AI`, `GP`
+- Pieces: **numbers 1–32 only** (no letter prefix)
+- Moves: **`<piece><from> <piece><to>`** → e.g. `9BI 9BJ`
+- Special events: `x` (death), `FORT` (castling), `+` (resurrection), `^` (promotion), `!` (check), `#` (checkmate), `=` (draw)
