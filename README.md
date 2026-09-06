@@ -1,6 +1,6 @@
 # NewChessMarkupSystem (NCMS)
 
-A move-oriented chess markup language that records a game as a sequence of piece movements.
+A move-oriented chess markup language. **One game = one line.**
 
 ---
 
@@ -21,178 +21,82 @@ Examples: `AI` = row A column I, `BJ` = row B column J, `GP` = row G column P.
 
 All 32 pieces are identified by **numbers only: 1–32**. No letter prefix.
 
-| Side  | Pieces  |
-|-------|---------|
-| White | 1–16    |
-| Black | 17–32   |
-
-The initial assignment of numbers to piece types is declared in the SETUP block.
+| Side  | Pieces | Includes                        |
+|-------|--------|---------------------------------|
+| White | 1–16   | 1=King, 2=Queen, 3–4=Rook, 5–6=Bishop, 7–8=Knight, 9–16=Pawn |
+| Black | 17–32  | 17=King, 18=Queen, 19–20=Rook, 21–22=Bishop, 23–24=Knight, 25–32=Pawn |
 
 ---
 
-## Standard Move Format
+## Game Line Format
 
-A single move is two tokens on one line:
+An entire game is written on **one line**. Moves are space-separated pairs:
 
 ```
-<piece><from> <piece><to>
+<piece><from><piece><to> <piece><from><piece><to> ...
 ```
 
-- `<piece>` — piece number (1–32)
-- `<from>` — current position (row + column)
-- `<to>` — destination position (row + column)
+Each pair is one move — the piece number, its current position, then the same piece number and its destination. Pairs are written back-to-back with no separator between the two tokens of a pair (or you may separate them with a space for readability — parsers treat whitespace uniformly).
+
+**Example of one move:**
+
+```
+9AI9BI
+```
+
+Piece 9 moves from row A column I to row B column I.
+
+**Example of a full game (one line):**
+
+```
+9AI9BI 23KG23LF 10JA10JC x9 FORT1 4 9BI9CI x17
+```
+
+---
+
+## Game End: King Death
+
+When a king is captured (dies), the game ends for that side. **Everything after the king's death token on the line is discarded.**
+
+- White king = piece **1**. `x1` → White is defeated; line ends here.
+- Black king = piece **17**. `x17` → Black is defeated; line ends here.
 
 **Example:**
 
 ```
-9BI 9BJ
+9AI9BI 23KG23LF x1 1MA1NA 9BI9CI
 ```
 
-Piece 9 moves from row B column I to row B column J.
-
----
-
-## Game File Structure
-
-```
-GAME: <white player> vs <black player>
-DATE: YYYY-MM-DD
-
-SETUP:
-<number> <type> <position> ...
-
-MOVES:
-<move>
-<move>
-...
-```
-
-### SETUP Block
-
-Declares the type and starting position of every piece. `<type>` is informational (King, Queen, Rook, Bishop, Knight, Pawn).
-
-```
-SETUP:
-1 King   MA   17 King   MG
-2 Queen  LA   18 Queen  LG
-3 Rook   IA   19 Rook   IG
-4 Rook   PA   20 Rook   PG
-5 Bishop JA   21 Bishop JG
-6 Bishop OA   22 Bishop OG
-7 Knight KA   23 Knight KG
-8 Knight NA   24 Knight NG
-9 Pawn   IA   25 Pawn   IG
-10 Pawn  JA   26 Pawn   JG
-11 Pawn  KA   27 Pawn   KG
-12 Pawn  LA   28 Pawn   LG
-13 Pawn  MA   29 Pawn   MG
-14 Pawn  NA   30 Pawn   NG
-15 Pawn  OA   31 Pawn   OG
-16 Pawn  PA   32 Pawn   PG
-```
-
-### MOVES Block
-
-Each line is one move.
-
-```
-MOVES:
-9BI 9BJ
-23KG 23LF
-10JA 10JC
-```
+`x1` ends the game. `1MA1NA 9BI9CI` is discarded.
 
 ---
 
 ## Special Move Notations
 
-| Event       | Syntax              | Meaning                                         |
-|-------------|---------------------|-------------------------------------------------|
-| Death       | `x<piece>`          | Piece is removed from the board (captured)      |
-| Fort        | `FORT <piece> <piece>` | Castling between king and rook               |
-| Resurrection | `+<piece><position>` | Piece returns to the board at position        |
-| Promotion   | `^<piece><position>` | Pawn reaches the last row and is promoted      |
-| Check       | `!<piece><position>` | King is in check at position                  |
-| Checkmate   | `#<piece><position>` | Checkmate; game ends                          |
-| Draw        | `=`                 | Game ends in a draw                             |
+These appear as tokens within the game line.
 
-### Examples
-
-```
-# Piece 9 is captured
-x9
-
-# Castling: piece 1 (king) and piece 4 (rook)
-FORT 1 4
-
-# Piece 9 resurrected at row A column I
-+9AI
-
-# Piece 9 promotes at row G column I
-^9GI
-
-# Piece 1 (king) is in check at row B column N
-!1BN
-
-# Checkmate — piece 1 at row B column N
-#1BN
-```
-
----
-
-## Full Example
-
-```
-GAME: Alice vs Bob
-DATE: 2026-09-05
-
-SETUP:
-1 King   MA   17 King   MG
-2 Queen  LA   18 Queen  LG
-3 Rook   IA   19 Rook   IG
-4 Rook   PA   20 Rook   PG
-5 Bishop JA   21 Bishop JG
-6 Bishop OA   22 Bishop OG
-7 Knight KA   23 Knight KG
-8 Knight NA   24 Knight NG
-9 Pawn   IA   25 Pawn   IG
-10 Pawn  JA   26 Pawn   JG
-11 Pawn  KA   27 Pawn   KG
-12 Pawn  LA   28 Pawn   LG
-13 Pawn  MA   29 Pawn   MG
-14 Pawn  NA   30 Pawn   NG
-15 Pawn  OA   31 Pawn   OG
-16 Pawn  PA   32 Pawn   PG
-
-MOVES:
-9AI 9BI
-23KG 23LF
-10JA 10JC
-x9
-FORT 1 4
-!1NB
-#1NB
-```
+| Event        | Token                  | Meaning                                            |
+|--------------|------------------------|----------------------------------------------------|
+| Death        | `x<piece>`             | Piece is removed from the board (captured)         |
+| Fort         | `FORT<piece><piece>`   | Castling between king and rook (no spaces)         |
+| Resurrection | `+<piece><position>`   | Piece returns to the board at position             |
+| Promotion    | `^<piece><position>`   | Pawn reaches the last row and is promoted          |
+| Check        | `!<piece><position>`   | King is in check at position                       |
+| Draw         | `=`                    | Game ends in a draw                                |
 
 ---
 
 ## Illegal Games
 
-A game is marked as **illegal** at the header level if it contains any move that violates the universal movement rules of a piece type. Individual moves are **not** marked — the entire game record is flagged.
-
-### Syntax
-
-Add `ILLEGAL` as a field in the game header:
+If any move in the game line violates the universal movement rules of a piece, the game is flagged `ILLEGAL` as the very first token on the line.
 
 ```
-GAME: <white player> vs <black player>
-DATE: YYYY-MM-DD
-ILLEGAL: yes
+ILLEGAL 9AI9BI 9BI9EI x17
 ```
+
+The `ILLEGAL` flag applies to the whole game. Individual moves are not marked.
 
 ### Universal Illegal Move Rules
-
-These rules apply to all games regardless of variant. A game must be flagged `ILLEGAL: yes` if any move breaks these:
 
 | Piece Type | Illegal if…                                                                         |
 |------------|-------------------------------------------------------------------------------------|
@@ -204,37 +108,49 @@ These rules apply to all games regardless of variant. A game must be flagged `IL
 | King       | Moves more than 1 square (outside of castling)                                      |
 | Camel      | Moves in a straight or diagonal line (must move in a 3+1 L-shape)                  |
 
-> Any piece type beyond the standard six follows the same principle: if a move breaks its defined movement pattern, the game is flagged illegal.
+---
 
-### Example
+## Full Example
 
 ```
-GAME: Alice vs Bob
-DATE: 2026-09-05
-ILLEGAL: yes
-
-SETUP:
-...
-
-MOVES:
-9AI 9BI
-9BI 9EI
+9AI9BI 23KG23LF 10JA10JC x9 FORT1 4 !17MF 9BI9CI x17
 ```
 
-Piece 9 (Pawn) moving 3 steps forward makes the whole game illegal.
+Reading left to right:
+1. `9AI9BI` — piece 9 moves from AI to BI
+2. `23KG23LF` — piece 23 moves from KG to LF
+3. `10JA10JC` — piece 10 moves from JA to JC
+4. `x9` — piece 9 is captured
+5. `FORT1 4` — castling between pieces 1 and 4
+6. `!17MF` — black king (piece 17) is in check at MF
+7. `9BI9CI` — piece 9 moves (wait — x9 already removed it, so this is in error — game would be ILLEGAL)
+8. `x17` — black king captured; **game ends here**, black is defeated
 
 ---
 
-## File Extension
+## File Format
 
-Save game files with the `.ncms` extension.
+- One game per line in a `.ncms` file
+- Lines starting with `#` are comments
+- `ILLEGAL` as the first token flags the whole game line as containing an illegal move
+
+**Example `.ncms` file:**
+
+```
+# NCMS game file
+9AI9BI 23KG23LF 10JA10JC x17
+ILLEGAL 9AI9BI 9BI9EI x17
+9AI9BI 7KA7LB =
+```
 
 ---
 
 ## Summary
 
 - Positions: **row (A–G) + column (I–P)** → e.g. `AI`, `GP`
-- Pieces: **numbers 1–32 only** (no letter prefix)
-- Moves: **`<piece><from> <piece><to>`** → e.g. `9BI 9BJ`
-- Special events: `x` (death), `FORT` (castling), `+` (resurrection), `^` (promotion), `!` (check), `#` (checkmate), `=` (draw)
-- Illegal games: `ILLEGAL: yes` in header — flags the whole game if any move violates universal piece movement rules
+- Pieces: **numbers 1–32 only**, no letter prefix
+- Format: **one game per line**, moves space-separated as `<piece><from><piece><to>` pairs
+- King death (`x1` or `x17`) ends the game; rest of line is discarded
+- Special tokens: `x` (death), `FORT` (castling), `+` (resurrection), `^` (promotion), `!` (check), `=` (draw)
+- Illegal games: `ILLEGAL` as first token on the line
+
